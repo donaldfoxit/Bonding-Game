@@ -1,172 +1,99 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Heart } from 'lucide-react';
 
-const HOME_BG = "/harmoni-hero-bg.png";
-
-// Floating light particles - Subtle
-const DreamParticles = () => (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
-        {[...Array(25)].map((_, i) => (
-            <motion.div
-                key={i}
-                className="absolute rounded-full"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    width: Math.random() * 3 + 2,
-                    height: Math.random() * 3 + 2,
-                    background: `radial-gradient(circle, rgba(255,255,255,${Math.random() * 0.3 + 0.2}) 0%, transparent 70%)`
-                }}
-                initial={{ top: '100%', opacity: 0 }}
-                animate={{
-                    top: '-5%',
-                    opacity: [0, 0.5, 0.4, 0]
-                }}
-                transition={{
-                    duration: Math.random() * 16 + 12,
-                    repeat: Infinity,
-                    delay: Math.random() * 10,
-                    ease: 'linear'
-                }}
-            />
-        ))}
-    </div>
-);
-
-// Subtle ambient light rays
-const LightRays = ({ opacity }) => (
-    <motion.div
-        style={{ opacity }}
-        className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
-    >
-        <div className="absolute top-0 left-1/4 w-[1px] h-full bg-gradient-to-b from-white/10 via-white/5 to-transparent transform -rotate-12 origin-top" />
-        <div className="absolute top-0 right-1/3 w-[1px] h-full bg-gradient-to-b from-white/8 via-white/3 to-transparent transform rotate-6 origin-top" />
-        <div className="absolute top-0 left-1/2 w-[2px] h-full bg-gradient-to-b from-accent/10 via-accent/5 to-transparent transform -rotate-3 origin-top blur-sm" />
-    </motion.div>
-);
+// Corrected Image Path
+const HOME_BG = "/jeffrey-lai-Cz57JO4T0gQ-unsplash.jpg";
 
 const HeroSection = ({ onEnter }) => {
-    const ref = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: ref,
-        offset: ["start start", "end start"]
-    });
+    const [isClicked, setIsClicked] = useState(false);
 
-    const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-    const opacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-    const yText = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
-    const blur = useTransform(scrollYProgress, [0, 1], ["blur(0px)", "blur(10px)"]);
-
-    // Dispersion Mask
-    const maskImage = useTransform(scrollYProgress, [0, 1], [
-        "linear-gradient(to bottom, black 80%, transparent 100%)",
-        "linear-gradient(to bottom, black 0%, transparent 30%)"
-    ]);
+    const handleClick = () => {
+        setIsClicked(true);
+        setTimeout(() => {
+            onEnter();
+        }, 600);
+    };
 
     return (
-        <section
-            ref={ref}
-            className="relative h-screen w-full overflow-hidden flex items-center justify-center text-center bg-[#000105]"
-        >
-            {/* Background Image Layer */}
-            <motion.div
-                style={{
-                    scale,
-                    opacity,
-                    maskImage,
-                    WebkitMaskImage: maskImage,
-                    filter: blur,
-                    backgroundImage: `url('${HOME_BG}')`
-                }}
-                className="absolute inset-0 z-0 bg-cover bg-center opacity-60 pointer-events-none will-change-transform"
-            />
+        <section className="relative h-screen w-full overflow-hidden flex items-center justify-center text-center bg-[#000105]">
 
-            {/* Gradient Overlay */}
-            <motion.div style={{ opacity }} className="absolute inset-0 z-5 pointer-events-none">
-                <div className="w-full h-full bg-gradient-to-b from-black/50 via-transparent to-[#000105]" />
+            {/* 1. ALIVE BACKGROUND */}
+            <motion.div
+                animate={{ scale: [1, 1.15, 1], x: [0, -10, 0] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                style={{ backgroundImage: `url('${HOME_BG}')` }}
+                className="absolute inset-0 z-0 bg-cover bg-center opacity-60 pointer-events-none"
+            >
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000105]/20 to-[#000105]" />
             </motion.div>
 
-            {/* Cinematic Vignette */}
-            <div className="absolute inset-0 z-10 pointer-events-none shadow-[inset_0_0_200px_80px_rgba(0,0,0,0.9)]" />
+            <div className="absolute inset-0 z-10 bg-black/40 pointer-events-none" />
 
-            {/* Ambient Light Rays */}
-            <LightRays opacity={opacity} />
+            {/* 2. CONTENT - TIGHTENED LAYOUT */}
+            <div className="relative z-30 flex flex-col items-center justify-center h-full px-4">
 
-            {/* Floating Particles */}
-            <DreamParticles />
-
-            {/* Center Content */}
-            <motion.div
-                style={{ y: yText, opacity }}
-                className="relative z-30 flex flex-col items-center pointer-events-auto"
-            >
-                {/* Decorative Top Line */}
-                <motion.div
-                    className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mb-12"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 64, opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 1 }}
-                />
-
-                {/* Eyebrow Text */}
+                {/* "The Journey of" - Pulled closer to the title */}
                 <motion.p
-                    className="font-montserrat text-[10px] md:text-xs text-accent/80 tracking-[0.6em] uppercase mb-2"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.8 }}
+                    transition={{ delay: 0.5 }}
+                    // CHANGED: mb-0 and translate-y-4 to pull it DOWN into the title
+                    className="font-montserrat text-xs md:text-sm text-accent/80 mb-0 translate-y-4 tracking-[0.5em] uppercase drop-shadow-lg z-10"
                 >
                     The Journey of
                 </motion.p>
 
-                {/* Main Title */}
+                {/* "Harmoni" - Negative top margin to pull it UP */}
                 <motion.h1
-                    className="font-playfair italic font-light text-7xl md:text-9xl lg:text-[11rem] tracking-tight text-white mb-6"
-                    initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ delay: 0.5, duration: 1.2, ease: "easeOut" }}
-                    style={{
-                        textShadow: '0 0 80px rgba(255,255,255,0.3), 0 0 120px rgba(255,255,255,0.1)'
-                    }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.8, duration: 1.2 }}
+                    className="font-playfair italic font-medium text-6xl md:text-8xl lg:text-9xl tracking-tight text-white mb-6 drop-shadow-[0_0_50px_rgba(255,255,255,0.3)]"
                 >
                     Harmoni
                 </motion.h1>
 
-                {/* Tagline */}
                 <motion.p
-                    className="font-playfair italic text-white/50 text-lg md:text-2xl tracking-wide font-light mb-16"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8, duration: 0.8 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5 }}
+                    className="font-playfair italic text-white/60 text-lg md:text-2xl mb-20 tracking-wide font-light"
                 >
                     a conversation with the soul
                 </motion.p>
 
-                {/* Scroll Indicator */}
-                <motion.div
-                    className="cursor-pointer group relative flex flex-col items-center"
-                    onClick={onEnter}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2, duration: 0.8 }}
-                    whileHover={{ scale: 1.1 }}
+                {/* 3. LOVE BUTTON (Reduced Size) */}
+                <motion.button
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 2, type: "spring", stiffness: 200 }}
+                    onClick={handleClick}
+                    className="group relative cursor-pointer outline-none z-50 p-4"
                 >
-                    <div className="w-8 h-14 border border-white/30 rounded-full flex justify-center p-2 group-hover:border-white/60 transition-colors duration-500">
-                        <motion.div
-                            animate={{ y: [0, 16, 0] }}
-                            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                            className="w-1.5 h-1.5 bg-white/80 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                    <motion.div
+                        animate={{ scale: isClicked ? 1.2 : [1, 1.1, 1] }}
+                        transition={{ duration: isClicked ? 0.3 : 2, repeat: isClicked ? 0 : Infinity, ease: "easeInOut" }}
+                    >
+                        <Heart
+                            strokeWidth={1.5}
+                            size={32} /* Reduced size from 40 to 32 */
+                            className={`transition-all duration-500 ease-out
+                                ${isClicked
+                                    ? "fill-pink-500 text-pink-500 drop-shadow-[0_0_30px_rgba(236,72,153,0.9)]"
+                                    : "text-white/70 hover:text-pink-300 hover:drop-shadow-[0_0_15px_rgba(236,72,153,0.4)]"
+                                }
+                            `}
                         />
-                    </div>
-                    <p className="mt-4 font-montserrat text-[10px] tracking-[0.4em] text-white/30 uppercase group-hover:text-white/50 transition-colors duration-500">
-                        Scroll to begin
-                    </p>
-                </motion.div>
-            </motion.div>
+                    </motion.div>
 
-            {/* Bottom Fade to Black */}
-            <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#000105] via-[#000105]/90 to-transparent z-25 pointer-events-none" />
-
-            {/* Subtle Bottom Glow */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-accent/5 blur-[100px] rounded-full pointer-events-none z-20" />
+                    {!isClicked && (
+                        <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 font-montserrat text-[9px] tracking-[0.3em] text-white/30 uppercase transition-opacity whitespace-nowrap">
+                            Click to Enter
+                        </span>
+                    )}
+                </motion.button>
+            </div>
         </section>
     );
 };
