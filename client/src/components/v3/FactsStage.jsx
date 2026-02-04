@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { playClickSound } from '../../utils/clickSound';
 
 const FactsStage = ({ onNext }) => {
     return (
@@ -56,7 +57,10 @@ const FactsStage = ({ onNext }) => {
                     transition={{ delay: 6.5, duration: 1 }}
                 >
                     <button
-                        onClick={onNext}
+                        onClick={() => {
+                            playClickSound();
+                            onNext();
+                        }}
                         className="group relative px-10 py-4 border border-white/20 rounded-full hover:bg-white/5 transition-all duration-500"
                     >
                         <span className="font-montserrat text-[9px] tracking-[0.3em] text-white uppercase group-hover:tracking-[0.4em] transition-all">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { playClickSound, playChimeSound } from '../../utils/clickSound';
 
 // Floating ethereal particles - Subtle
 const DreamParticles = () => {
@@ -59,9 +60,11 @@ const RulesStage = ({ onConfirm }) => {
     }, []);
 
     const handlePartner1Click = () => {
+        playClickSound();
         setPartner1Clicked(true);
         if (partner2Clicked) {
-            // Play "agreed" voice
+            // Play chime and agreed voice
+            playChimeSound();
             const audio = new Audio('/agreed-voice.mp3');
             audio.volume = 0.8;
             audio.play().catch(() => console.log('Agreed audio blocked'));
@@ -70,9 +73,11 @@ const RulesStage = ({ onConfirm }) => {
     };
 
     const handlePartner2Click = () => {
+        playClickSound();
         setPartner2Clicked(true);
         if (partner1Clicked) {
-            // Play "agreed" voice
+            // Play chime and agreed voice
+            playChimeSound();
             const audio = new Audio('/agreed-voice.mp3');
             audio.volume = 0.8;
             audio.play().catch(() => console.log('Agreed audio blocked'));
@@ -174,7 +179,7 @@ const RulesStage = ({ onConfirm }) => {
                             </span>
                         </motion.button>
 
-                        {/* Partner 2 Button */}
+                        {/* Partner 2 Button - Pink for woman */}
                         <motion.button
                             onClick={handlePartner2Click}
                             disabled={partner2Clicked}
@@ -184,10 +189,10 @@ const RulesStage = ({ onConfirm }) => {
                                 }`}
                         >
                             <div className={`absolute inset-0 border rounded-full transition-all duration-500 ${partner2Clicked
-                                ? 'border-green-400/50 bg-green-400/10'
+                                ? 'border-pink-400/50 bg-pink-400/10'
                                 : 'border-white/20 group-hover:border-white/40'
                                 }`} />
-                            <span className={`relative font-playfair italic text-base md:text-lg transition-colors duration-300 ${partner2Clicked ? 'text-green-400/80' : 'text-white/70 group-hover:text-white'
+                            <span className={`relative font-playfair italic text-base md:text-lg transition-colors duration-300 ${partner2Clicked ? 'text-pink-400/80' : 'text-white/70 group-hover:text-white'
                                 }`}>
                                 {partner2Clicked ? '✓ Agreed' : 'I Understand'}
                             </span>

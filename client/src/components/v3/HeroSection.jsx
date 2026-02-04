@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
+import { playClickSound } from '../../utils/clickSound';
 
 // Corrected Image Path
 const HOME_BG = "/pexels-samrat-sammy-55594524-8983546.jpg";
@@ -9,6 +10,7 @@ const HeroSection = ({ onEnter }) => {
     const [isClicked, setIsClicked] = useState(false);
 
     const handleClick = () => {
+        playClickSound();
         setIsClicked(true);
         setTimeout(() => {
             onEnter();
