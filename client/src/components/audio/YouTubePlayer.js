@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Volume2, VolumeX, ExternalLink } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 
-export const YouTubePlayer = ({ videoId, isPlaying, onToggle }) => {
+export const YouTubePlayer = ({ videoId, playing, startDelayed = false }) => {
     const playerRef = useRef(null);
     const [playerReady, setPlayerReady] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [showControls, setShowControls] = useState(false);
     const containerRef = useRef(null);
+    const hasStartedRef = useRef(false);
 
     useEffect(() => {
-        // Ensure the container is rendered first
         if (!containerRef.current) return;
 
         const initializePlayer = () => {
@@ -29,7 +31,7 @@ export const YouTubePlayer = ({ videoId, isPlaying, onToggle }) => {
                 playerRef.current = new window.YT.Player('youtube-player', {
                     videoId: videoId,
                     playerVars: {
-                        autoplay: isPlaying ? 1 : 0,
+                        autoplay: 0,
                         controls: 0,
                         disablekb: 1,
                         fs: 0,
@@ -44,13 +46,7 @@ export const YouTubePlayer = ({ videoId, isPlaying, onToggle }) => {
                     events: {
                         onReady: (event) => {
                             console.log('YouTube player ready');
-                            event.target.setVolume(25);
                             setPlayerReady(true);
-                            if (isPlaying) {
-                                setTimeout(() => {
-                                    event.target.playVideo();
-                                }, 100);
-                            }
                         },
                         onStateChange: (event) => {
                             if (event.data === window.YT.PlayerState.ENDED) {
@@ -91,13 +87,43 @@ export const YouTubePlayer = ({ videoId, isPlaying, onToggle }) => {
                 }
             }
         };
-    }, [videoId, isPlaying]);
+    }, [videoId]);
 
+    // Handle the "trick trigger" for autoplay policy
     useEffect(() => {
-        if (playerReady && playerRef.current) {
+        if (playerReady && playerRef.current && playing && !hasStartedRef.current) {
+            hasStartedRef.current = true;
+
+            try {
+                // TRICK: Start immediately at volume 0 to capture user interaction
+                playerRef.current.setVolume(0);
+                playerRef.current.playVideo();
+
+                // Quick fade in (100ms)
+                setTimeout(() => {
+                    if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
+                        playerRef.current.setVolume(25); // Set to 25% volume
+                        setShowControls(true); // Show mute button after music starts
+                    }
+                }, 100);
+            } catch (e) {
+                console.error('Error starting playback:', e);
+            }
+        }
+    }, [playing, playerReady]);
+
+    // Reset when videoId changes (for journey music switch)
+    useEffect(() => {
+        hasStartedRef.current = false;
+        setShowControls(false);
+    }, [videoId]);
+
+    // Handle play/pause toggle
+    useEffect(() => {
+        if (playerReady && playerRef.current && hasStartedRef.current) {
             try {
                 if (typeof playerRef.current.playVideo === 'function' && typeof playerRef.current.pauseVideo === 'function') {
-                    if (isPlaying) {
+                    if (playing) {
                         playerRef.current.playVideo();
                     } else {
                         playerRef.current.pauseVideo();
@@ -107,41 +133,58 @@ export const YouTubePlayer = ({ videoId, isPlaying, onToggle }) => {
                 console.error('Error toggling playback:', e);
             }
         }
-    }, [isPlaying, playerReady]);
+    }, [playing, playerReady]);
+
+    const toggleMute = () => {
+        if (playerRef.current) {
+            try {
+                if (isMuted) {
+                    playerRef.current.unMute();
+                    playerRef.current.setVolume(25);
+                } else {
+                    playerRef.current.mute();
+                }
+                setIsMuted(!isMuted);
+            } catch (e) {
+                console.error('Error toggling mute:', e);
+            }
+        }
+    };
 
     return (
-        <div ref={containerRef} className="fixed bottom-4 right-4 z-40" style={{ zIndex: 9999 }}>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-rose-500/30 to-indigo-500/30 backdrop-blur-lg rounded-full px-4 py-2.5 border border-white/40 shadow-xl">
-                <button
-                    onClick={onToggle}
-                    className="p-2 bg-white/90 hover:bg-white text-gray-800 rounded-full transition-all duration-200 shadow-md hover:scale-110"
-                    title={isPlaying ? "Pause Music" : "Play Music"}
+        <>
+            {/* Mute Button - Only visible after music starts */}
+            {showControls && (
+                <div
+                    className="fixed bottom-8 right-8 transition-opacity duration-500"
+                    style={{ zIndex: 99999, opacity: showControls ? 1 : 0 }}
                 >
-                    {isPlaying ? (
-                        <Volume2 className="w-4 h-4" />
-                    ) : (
-                        <VolumeX className="w-4 h-4" />
-                    )}
-                </button>
-                <a
-                    href={`https://youtu.be/${videoId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white/90 hover:bg-white text-gray-800 rounded-full transition-all duration-200 shadow-md hover:scale-110"
-                    title="Open in YouTube"
-                >
-                    <ExternalLink className="w-4 h-4" />
-                </a>
+                    <button
+                        onClick={toggleMute}
+                        className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full transition-all duration-300 shadow-lg hover:scale-110 border border-white/20"
+                        title={isMuted ? "Unmute Music" : "Mute Music"}
+                    >
+                        {isMuted ? (
+                            <VolumeX className="w-5 h-5" />
+                        ) : (
+                            <Volume2 className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
+            )}
+
+            {/* Hidden YouTube Player */}
+            <div ref={containerRef}>
+                <div id="youtube-player" style={{
+                    position: 'absolute',
+                    top: '-9999px',
+                    left: '-9999px',
+                    width: '1px',
+                    height: '1px',
+                    overflow: 'hidden',
+                    visibility: 'hidden'
+                }}></div>
             </div>
-            <div id="youtube-player" style={{
-                position: 'absolute',
-                top: '-9999px',
-                left: '-9999px',
-                width: '1px',
-                height: '1px',
-                overflow: 'hidden',
-                visibility: 'hidden'
-            }}></div>
-        </div>
+        </>
     );
 };

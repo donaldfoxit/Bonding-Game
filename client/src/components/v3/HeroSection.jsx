@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
 
 // Corrected Image Path
-const HOME_BG = "/jeffrey-lai-Cz57JO4T0gQ-unsplash.jpg";
+const HOME_BG = "/pexels-samrat-sammy-55594524-8983546.jpg";
 
 const HeroSection = ({ onEnter }) => {
     const [isClicked, setIsClicked] = useState(false);
