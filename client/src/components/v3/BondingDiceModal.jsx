@@ -2,6 +2,36 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles } from 'lucide-react';
 
+// Crystal bowl resonance using Web Audio API
+const playCrystalBowl = () => {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        // Two harmonics for richness
+        const freqs = [432, 648]; // fundamental + perfect fifth
+        freqs.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const now = ctx.currentTime;
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+
+            // Swell then long decay — crystal bowl feel
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(i === 0 ? 0.18 : 0.08, now + 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+
+            osc.start(now);
+            osc.stop(now + 3.5);
+        });
+    } catch (e) { }
+};
+
 // Celestial particles floating upward
 const CelestialParticles = () => (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -81,7 +111,7 @@ const BondingDiceModal = ({ prompt, onClose }) => {
                             exit={{ scale: 1.5, opacity: 0, filter: "blur(20px)" }}
                             transition={{ duration: 0.8, ease: "easeOut" }}
                             className="flex flex-col items-center cursor-pointer group"
-                            onClick={() => setRevealed(true)}
+                            onClick={() => { playCrystalBowl(); setRevealed(true); }}
                         >
                             {/* THE MAGICAL ORB */}
                             <div className="relative w-40 h-40 md:w-56 md:h-56">

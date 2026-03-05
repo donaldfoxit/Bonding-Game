@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHarmoniController } from './hooks/useHarmoniController';
-import { YouTubePlayer } from './components/audio/YouTubePlayer';
+import MusicPlayer from './components/v3/MusicPlayer';
 import { Play, Home } from 'lucide-react';
 
 // COMPONENTS
 import HeroSection from "./components/v3/HeroSection";
 import RulesStage from "./components/v3/RulesStage";
-import FactsStage from "./components/v3/FactsStage"; // <--- NEW IMPORT
+import FactsStage from "./components/v3/FactsStage";
 import SetupStage from "./components/v3/SetupStage";
 import JourneyInterface from "./components/v3/JourneyInterface";
 import BondingDiceModal from "./components/v3/BondingDiceModal";
 import LoadingScreen from "./components/v3/LoadingScreen";
 import AffirmationStage from "./components/v3/AffirmationStage";
+import CompletionScreen from "./components/v3/CompletionScreen";
 import NoiseOverlay from "./components/effects/NoiseOverlay";
 
 const GlowBorder = () => (
@@ -36,6 +37,11 @@ export default function App() {
   }, [state.stage, view]);
 
   const combinedState = { ...state, destinations: data.destinations };
+
+  const handleRestart = () => {
+    actions.setStage('welcome');
+    setView('hero');
+  };
 
   // Page Transitions
   const pageVariants = {
@@ -115,7 +121,13 @@ export default function App() {
                 {/* RULES -> Go to FACTS */}
                 {view === 'rules' && (
                   <motion.div key="rules" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="absolute inset-0 z-30 bg-[#000105]">
-                    <RulesStage onConfirm={() => setView('facts')} />
+                    <RulesStage
+                      onConfirm={() => setView('facts')}
+                      onSetNames={(n1, n2) => {
+                        actions.setPartner1Name(n1);
+                        actions.setPartner2Name(n2);
+                      }}
+                    />
                   </motion.div>
                 )}
 
@@ -163,6 +175,16 @@ export default function App() {
                   </motion.div>
                 )}
 
+                {/* GAME COMPLETE */}
+                {view === 'complete' && (
+                  <motion.div key="complete" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-[#000105]">
+                    <CompletionScreen
+                      data={combinedState}
+                      onRestart={handleRestart}
+                    />
+                  </motion.div>
+                )}
+
               </AnimatePresence>
             </motion.div>
           )}
@@ -179,12 +201,8 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-0 left-0 opacity-0 pointer-events-none">
-          <YouTubePlayer
-            playing={state.audioPlaying}
-            videoId={state.destination?.youtubeId || "LcDjP3cdk0g"}
-          />
-        </div>
+        {/* Global Music Player — mute/unmute button visible to users */}
+        <MusicPlayer autoStart={state.audioPlaying} />
       </div>
     </>
   );

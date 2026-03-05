@@ -9,6 +9,8 @@ const supabase = createClient(
 );
 
 // --- HELPERS ---
+
+// Fisher-Yates shuffle — unbiased, every permutation equally likely
 const smartShuffle = (array) => {
   if (!array || !Array.isArray(array)) return [];
   const shuffled = [...array];
@@ -37,7 +39,14 @@ const organizeQuestions = (rawData) => {
     else organized['round0'].push(q);
   });
 
-  Object.keys(organized).forEach(k => organized[k] = smartShuffle(organized[k]));
+  // Respect the `fixed` flag: pinned questions always lead their round,
+  // the rest are shuffled freely around them.
+  Object.keys(organized).forEach(k => {
+    const fixedOnes = organized[k].filter(q => q.fixed);
+    const freeOnes = smartShuffle(organized[k].filter(q => !q.fixed));
+    organized[k] = [...fixedOnes, ...freeOnes];
+  });
+
   return organized;
 };
 
@@ -49,6 +58,14 @@ export function useHarmoniController() {
   const [destination, setDestination] = useState(null);
   const [currentRound, setCurrentRound] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [questionsAnswered, setQuestionsAnswered] = useState(0);
+
+  // Partner names
+  const [partner1Name, setPartner1Name] = useState('');
+  const [partner2Name, setPartner2Name] = useState('');
+
+  // Risk cooldown — locked for N questions after use
+  const [riskCooldown, setRiskCooldown] = useState(0);
 
   // Audio & Flags
   const [audioPlaying, setAudioPlaying] = useState(false);
@@ -69,13 +86,18 @@ export function useHarmoniController() {
 
   const questionCounter = useRef(0);
   const nextBondingTarget = useRef(Math.floor(Math.random() * 3) + 2);
+  // Cache raw question data so startJourney can re-shuffle on every replay
+  const rawQuestionsData = useRef(localFallbackQuestions);
 
   // Initial Fetch
   useEffect(() => {
     const initData = async () => {
       try {
         const { data: qData } = await supabase.from('questions').select('*');
-        if (qData?.length > 0) setQuestions(organizeQuestions(qData));
+        if (qData?.length > 0) {
+          rawQuestionsData.current = qData; // Cache for re-shuffling on replay
+          setQuestions(organizeQuestions(qData));
+        }
 
         const { data: rData } = await supabase.from('risky_questions').select('*');
         if (rData?.length > 0) setRiskyQuestions(rData);
@@ -119,8 +141,8 @@ export function useHarmoniController() {
 
     // CHECK IF MAIN JOURNEY
     if (destination.id === 'main') {
-      // ACTIVATE GAME (Original Setup)
-      setQuestions(organizeQuestions(localFallbackQuestions));
+      // ACTIVATE GAME — re-shuffle from live data every time for true randomness on replay
+      setQuestions(organizeQuestions(rawQuestionsData.current));
       setIsComingSoon(false);
       setTimeRemaining(timerDuration * 60);
       setTimerActive(true);
@@ -130,6 +152,7 @@ export function useHarmoniController() {
       // Reset counters
       setCurrentRound(0);
       setCurrentQuestion(0);
+      setQuestionsAnswered(0);
       questionCounter.current = 0;
       nextBondingTarget.current = Math.floor(Math.random() * 3) + 2;
     } else {
@@ -144,6 +167,9 @@ export function useHarmoniController() {
     if (isComingSoon) return;
 
     questionCounter.current += 1;
+    setQuestionsAnswered(prev => prev + 1);
+    // Tick down risk cooldown
+    setRiskCooldown(prev => Math.max(0, prev - 1));
 
     // Bonding Logic (Active for Main Journey)
     if (questionCounter.current >= nextBondingTarget.current) {
@@ -171,14 +197,19 @@ export function useHarmoniController() {
 
   const handleDareToRisk = () => {
     if (isComingSoon) return;
+    if (riskCooldown > 0) return; // Cooldown active
     const pool = (riskyQuestions.length > 0) ? riskyQuestions : localFallbackRiskyQuestions;
     const q = pool[Math.floor(Math.random() * pool.length)] || { q: "What is a truth you've never shared?" };
     setCurrentRiskyQuestion(q);
     setShowRiskyQuestion(true);
+    setRiskCooldown(3); // Lock for 3 questions
   };
 
   const currentRoundQuestions = questions?.[`round${currentRound}`] || [];
   const currentQuestionData = currentRoundQuestions[currentQuestion] || { q: "Loading..." };
+
+  // Total questions across all rounds for accurate progress
+  const totalQuestions = Object.values(questions).reduce((sum, arr) => sum + arr.length, 0);
 
   const formatTime = (seconds) => {
     if (!seconds && seconds !== 0) return "00:00";
@@ -194,12 +225,16 @@ export function useHarmoniController() {
       audioPlaying, showBondingPrompt, currentBondingPrompt,
       showRiskyQuestion, currentRiskyQuestion,
       timeRemaining: formatTime(timeRemaining),
+      questionsAnswered, totalQuestions,
+      partner1Name, partner2Name,
+      riskCooldown,
     },
     actions: {
       setStage, setDestination, startJourney, handleContinue,
       setAudioPlaying, startThemeMusic,
       setShowBondingPrompt, setShowRiskyQuestion,
       handleDareToRisk, setTimerDuration,
+      setPartner1Name, setPartner2Name,
       rollDice: () => { }
     },
     data: {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { playClickSound } from '../../utils/clickSound';
 
 const SetupStage = ({ destinations, onSelectDest, onSelectTime, onInitiate }) => {
